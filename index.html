@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Imposter">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Imposter Word</title>
+<link rel="manifest" id="pwa-manifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<style>
+:root{
+  --bg:#080810;--bg2:#0f0f1a;--bg3:#161626;--bd:#252538;
+  --c:#00e5ff;--p:#ff2060;--g:#00ff88;--y:#ffd600;--r:#ff3838;
+  --txt:#e0e0f0;--muted:#5a5a80;
+  --f:'Outfit',sans-serif;--fm:'JetBrains Mono',monospace;
+  --rad:14px;--rads:9px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--f);overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,229,255,.022) 39px,rgba(0,229,255,.022) 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,229,255,.022) 39px,rgba(0,229,255,.022) 40px);
+}
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Screens ── */
+.screen{display:none;flex-direction:column;min-height:100svh;padding:20px 16px 40px;animation:fadeUp .3s ease}
+.screen.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Toasts ── */
+#toasts{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;width:min(360px,calc(100vw - 32px));pointer-events:none}
+.toast{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rads);padding:11px 14px;font-size:.88rem;box-shadow:0 8px 32px rgba(0,0,0,.7);display:flex;align-items:center;gap:9px;animation:tIn .25s ease}
+.toast.info{border-left:3px solid var(--c)}.toast.warn{border-left:3px solid var(--y)}
+.toast.good{border-left:3px solid var(--g)}.toast.bad{border-left:3px solid var(--r)}
+@keyframes tIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tOut{to{opacity:0;transform:translateY(-8px)}}
+.toast.out{animation:tOut .25s ease forwards}
+
+/* ── Typography ── */
+.logo h1{font-size:clamp(2.4rem,8vw,3.2rem);font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,var(--c) 30%,var(--p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;text-align:center}
+.logo .sub{font-family:var(--fm);font-size:.65rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-top:6px;text-align:center}
+.phase-tag{display:inline-block;font-family:var(--fm);font-size:.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);border:1px solid var(--bd);border-radius:20px;padding:4px 11px;margin-bottom:8px}
+.slabel{font-family:var(--fm);font-size:.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+h2{font-size:1.5rem;font-weight:900;margin-bottom:2px}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:14px}
+
+/* ── Buttons ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px 20px;border:none;border-radius:var(--rad);font-family:var(--f);font-size:.95rem;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s;text-transform:uppercase;letter-spacing:1.2px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.38;cursor:default;transform:none!important}
+.btn-c{background:linear-gradient(135deg,var(--c),#007a99);color:#000;box-shadow:0 4px 20px rgba(0,229,255,.28)}
+.btn-c:not(:disabled):hover{box-shadow:0 4px 30px rgba(0,229,255,.5)}
+.btn-p{background:linear-gradient(135deg,var(--p),#990030);color:#fff;box-shadow:0 4px 20px rgba(255,32,96,.28)}
+.btn-p:not(:disabled):hover{box-shadow:0 4px 30px rgba(255,32,96,.5)}
+.btn-g{background:linear-gradient(135deg,var(--g),#007a44);color:#000;box-shadow:0 4px 20px rgba(0,255,136,.28)}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--muted)}
+.btn-ghost:not(:disabled):hover{border-color:var(--c);color:var(--c)}
+
+/* ── Inputs ── */
+.igroup{margin-bottom:13px}
+.igroup label{display:block;font-family:var(--fm);font-size:.62rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--muted);margin-bottom:6px}
+input[type=text],select{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rads);color:var(--txt);font-family:var(--f);font-size:1rem;padding:13px 14px;transition:border-color .2s,box-shadow .2s;outline:none;-webkit-appearance:none}
+input:focus,select:focus{border-color:var(--c);box-shadow:0 0 0 2px rgba(0,229,255,.12)}
+.big-code{font-size:2.2rem;font-weight:900;text-align:center;letter-spacing:10px;font-family:var(--fm);padding:18px}
+select option{background:var(--bg3)}
+.range-row{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--bd);border-radius:2px;outline:none;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--c);border-radius:50%;cursor:pointer;box-shadow:0 0 8px rgba(0,229,255,.5)}
+.range-val{font-family:var(--fm);color:var(--c);font-weight:700;min-width:36px;text-align:right;font-size:.9rem}
+
+/* ── Room code display ── */
+.code-big{font-family:var(--fm);font-size:3.2rem;font-weight:700;color:var(--c);letter-spacing:14px;text-shadow:0 0 24px rgba(0,229,255,.4);line-height:1;text-align:center}
+
+/* ── Player list ── */
+.plist{display:flex;flex-direction:column;gap:8px}
+.pitem{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rads)}
+.pitem.host-item{border-color:rgba(0,229,255,.25)}
+.pavatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#000;flex-shrink:0}
+.pname{font-weight:600;flex:1;font-size:.92rem}
+.pbadge{font-family:var(--fm);font-size:.58rem;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:20px}
+.b-host{background:rgba(0,229,255,.12);color:var(--c)}
+.b-ready{background:rgba(0,255,136,.15);color:var(--g)}
+.b-wait{background:rgba(90,90,128,.15);color:var(--muted)}
+
+/* ── Word card ── */
+.word-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:8px 16px}
+.tap-hint{font-family:var(--fm);font-size:.7rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+.wcard{width:100%;max-width:300px;border-radius:20px;padding:34px 22px;text-align:center;cursor:pointer;user-select:none;border:2px solid var(--bd);background:var(--bg2);transition:all .35s cubic-bezier(.34,1.56,.64,1)}
+.wcard.revealed{border-color:var(--c);background:linear-gradient(135deg,rgba(0,229,255,.08),rgba(0,229,255,.02));box-shadow:0 0 32px rgba(0,229,255,.18)}
+.wcard.revealed.imp{border-color:var(--p);background:linear-gradient(135deg,rgba(255,32,96,.08),rgba(255,32,96,.02));box-shadow:0 0 32px rgba(255,32,96,.18)}
+.wcard-icon{font-size:2rem;margin-bottom:8px}
+.wcard-label{font-family:var(--fm);font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.wcard.revealed .wcard-label{color:var(--c)}.wcard.revealed.imp .wcard-label{color:var(--p)}
+.wcard-word{font-size:2.3rem;font-weight:900;letter-spacing:-1px}
+.wcard.revealed .wcard-word{color:var(--c)}.wcard.revealed.imp .wcard-word{color:var(--p)}
+.wcard-sub{font-size:.78rem;color:var(--muted);margin-top:10px;line-height:1.5}
+
+/* ── Timer ── */
+.tcircle{width:90px;height:90px;border-radius:50%;margin:0 auto 6px;background:conic-gradient(var(--c) var(--p1,100%),var(--bg3) 0%);display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px rgba(0,229,255,.22);position:relative}
+.tcircle::before{content:'';position:absolute;width:70px;height:70px;border-radius:50%;background:var(--bg)}
+.tcircle.urgent{background:conic-gradient(var(--r) var(--p1,100%),var(--bg3) 0%);box-shadow:0 0 22px rgba(255,56,56,.25)}
+.tnum{font-family:var(--fm);font-size:1.6rem;font-weight:700;color:var(--c);position:relative;z-index:1}
+.tcircle.urgent .tnum{color:var(--r)}
+.tlabel{font-family:var(--fm);font-size:.62rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);text-align:center}
+
+/* ── First speaker banner ── */
+.speaker-banner{
+  background:linear-gradient(135deg,rgba(255,214,0,.1),rgba(255,214,0,.03));
+  border:1px solid rgba(255,214,0,.28);border-radius:var(--rad);
+  padding:16px;text-align:center;margin-bottom:14px;
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1)
+}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.speaker-banner .sp-icon{font-size:1.6rem;margin-bottom:4px}
+.speaker-banner .sp-label{font-family:var(--fm);font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--y);margin-bottom:4px}
+.speaker-banner .sp-name{font-size:1.4rem;font-weight:900;color:var(--y)}
+.speaker-banner .sp-sub{font-size:.76rem;color:var(--muted);margin-top:3px}
+
+/* ── Vote ── */
+.vlist{display:flex;flex-direction:column;gap:9px}
+.vbtn{display:flex;align-items:center;gap:13px;padding:13px 15px;background:var(--bg3);border:2px solid var(--bd);border-radius:var(--rad);cursor:pointer;transition:all .2s;width:100%;text-align:left;color:var(--txt);font-family:var(--f);font-size:.95rem;font-weight:600}
+.vbtn:hover{border-color:var(--c);background:rgba(0,229,255,.04)}
+.vbtn.sel{border-color:var(--p);background:rgba(255,32,96,.08);color:var(--p);box-shadow:0 0 16px rgba(255,32,96,.12)}
+.vavatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#000;flex-shrink:0}
+.vcnt{margin-left:auto;font-family:var(--fm);font-size:.8rem;color:var(--muted)}
+
+/* ── Results ── */
+.result-icon{font-size:3.8rem;display:block;margin-bottom:10px;animation:popIn .5s cubic-bezier(.34,1.56,.64,1)}
+.result-title{font-size:1.8rem;font-weight:900;margin-bottom:4px}
+.rtw{color:var(--g);text-shadow:0 0 20px rgba(0,255,136,.3)}
+.rtl{color:var(--p);text-shadow:0 0 20px rgba(255,32,96,.3)}
+.wpair{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:12px 0}
+.wpbox{padding:12px 20px;border-radius:var(--rad);font-weight:700;font-size:1.05rem;text-align:center}
+.wpbox small{display:block;font-family:var(--fm);font-size:.58rem;letter-spacing:2px;text-transform:uppercase;opacity:.6;margin-bottom:4px}
+.wpn{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:var(--c)}
+.wpi{background:rgba(255,32,96,.08);border:1px solid rgba(255,32,96,.25);color:var(--p)}
+
+/* ── QR display ── */
+.qr-wrap{display:flex;justify-content:center;margin:8px 0 12px}
+#qr-canvas{border-radius:var(--rads);border:3px solid var(--bd);image-rendering:pixelated}
+
+/* ── QR Scanner modal ── */
+#qr-modal{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.88);align-items:center;justify-content:center}
+#qr-modal.show{display:flex}
+.qm-box{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:14px;width:min(320px,calc(100vw - 32px))}
+.qm-box h3{font-size:1.05rem;font-weight:900}
+#qr-video-wrap{position:relative;width:240px;height:240px;border-radius:12px;overflow:hidden;background:#000;flex-shrink:0}
+#qr-video{width:100%;height:100%;object-fit:cover}
+.scan-line{position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);animation:scanMove 1.8s ease-in-out infinite;top:10%}
+@keyframes scanMove{0%{top:10%}50%{top:85%}100%{top:10%}}
+.qr-corner{position:absolute;width:22px;height:22px}
+.qr-corner.tl{top:7px;left:7px;border-top:3px solid var(--c);border-left:3px solid var(--c);border-radius:2px 0 0 0}
+.qr-corner.tr{top:7px;right:7px;border-top:3px solid var(--c);border-right:3px solid var(--c);border-radius:0 2px 0 0}
+.qr-corner.bl{bottom:7px;left:7px;border-bottom:3px solid var(--c);border-left:3px solid var(--c);border-radius:0 0 0 2px}
+.qr-corner.br{bottom:7px;right:7px;border-bottom:3px solid var(--c);border-right:3px solid var(--c);border-radius:0 0 2px 0}
+#scan-status{font-family:var(--fm);font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center}
+
+/* ── Install bar ── */
+#install-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;background:linear-gradient(135deg,rgba(0,229,255,.13),rgba(0,229,255,.04));border-top:1px solid rgba(0,229,255,.25);padding:14px 16px;align-items:center;gap:12px}
+#install-bar.show{display:flex}
+.ib-icon{font-size:1.8rem;flex-shrink:0}
+.ib-text{flex:1}.ib-text strong{display:block;font-size:.95rem;font-weight:700}.ib-text span{font-size:.75rem;color:var(--muted)}
+.ib-btn{background:var(--c);color:#000;border:none;border-radius:var(--rads);padding:10px 18px;font-weight:700;cursor:pointer;font-family:var(--f);font-size:.85rem;white-space:nowrap;flex-shrink:0}
+.ib-close{background:transparent;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1}
+
+/* ── iOS tip ── */
+#ios-tip{display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;background:var(--bg2);border-top:2px solid var(--c);padding:20px 18px 28px;flex-direction:column;gap:13px;border-radius:20px 20px 0 0}
+#ios-tip.show{display:flex}
+.tip-title{font-weight:900;font-size:1rem;text-align:center;color:var(--c)}
+.tip-row{display:flex;align-items:center;gap:11px;font-size:.88rem}
+.tip-num{width:26px;height:26px;border-radius:50%;background:var(--c);color:#000;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
+.tip-close{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rads);padding:11px;font-weight:700;cursor:pointer;font-family:var(--f);color:var(--muted);text-align:center;font-size:.85rem;width:100%}
+
+/* ── Update bar ── */
+#upd-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:linear-gradient(135deg,rgba(255,214,0,.12),rgba(255,214,0,.04));border-top:1px solid rgba(255,214,0,.25);padding:12px 16px;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:.85rem;color:var(--y)}
+#upd-bar.show{display:flex}
+#upd-bar button{background:var(--y);color:#000;border:none;border-radius:20px;padding:6px 14px;font-weight:700;cursor:pointer;font-family:var(--f);font-size:.78rem}
+#upd-bar .ud-close{background:transparent;border:1px solid rgba(255,214,0,.35);color:var(--y)}
+
+/* ── Offline ready bar ── */
+#offline-ready-bar{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:998;
+  background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,255,136,.05));
+  border-bottom:2px solid rgba(0,255,136,.4);
+  padding:14px 16px;align-items:center;gap:12px;
+  animation:slideDown .4s ease;
+}
+#offline-ready-bar.show{display:flex}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.orb-icon{font-size:1.5rem;flex-shrink:0}
+.orb-text{flex:1}
+.orb-text strong{display:block;font-size:.95rem;font-weight:700;color:var(--g)}
+.orb-text span{font-size:.75rem;color:var(--muted)}
+.orb-close{background:transparent;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;flex-shrink:0}
+
+/* ── Conn dot ── */
+#conn-badge{position:fixed;top:10px;right:12px;z-index:500;display:none;align-items:center;gap:5px;font-family:var(--fm);font-size:.6rem;color:var(--muted);background:rgba(8,8,16,.85);padding:4px 10px;border-radius:20px;border:1px solid var(--bd)}
+#conn-badge.show{display:flex}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g);box-shadow:0 0 6px var(--g);animation:blink 1.5s infinite}
+
+/* ── Utils ── */
+.mt-a{margin-top:auto}.mt-16{margin-top:16px}.mb-12{margin-bottom:12px}.mb-14{margin-bottom:14px}
+.gap-10{gap:10px}.fcol{display:flex;flex-direction:column}.tx-c{text-align:center}
+.tx-m{color:var(--muted);font-size:.88rem}.tx-sm{font-size:.82rem}.tx-mono{font-family:var(--fm)}
+@supports(padding-bottom:env(safe-area-inset-bottom)){
+  .screen{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+  #install-bar,#ios-tip,#upd-bar{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- Offline ready banner (shown once after first cache) -->
+<div id="offline-ready-bar">
+  <span class="orb-icon">📥</span>
+  <div class="orb-text">
+    <strong>Game saved offline!</strong>
+    <span>No internet needed next time — works forever</span>
+  </div>
+  <button class="orb-close" onclick="document.getElementById('offline-ready-bar').classList.remove('show')">✕</button>
+</div>
+
+<!-- Overlays -->
+<div id="toasts"></div>
+<div id="conn-badge"><span class="dot"></span><span>Connected</span></div>
+
+<!-- QR Scanner Modal -->
+<div id="qr-modal">
+  <div class="qm-box">
+    <h3>📷 Scan Room QR Code</h3>
+    <div id="qr-video-wrap">
+      <video id="qr-video" playsinline autoplay muted></video>
+      <div class="scan-line"></div>
+      <div class="qr-corner tl"></div><div class="qr-corner tr"></div>
+      <div class="qr-corner bl"></div><div class="qr-corner br"></div>
+    </div>
+    <div id="scan-status">Point camera at host's QR code</div>
+    <button class="btn btn-ghost" style="width:auto;padding:10px 28px" onclick="QRScan.close()">Cancel</button>
+  </div>
+</div>
+
+<!-- Install banners -->
+<div id="install-bar">
+  <span class="ib-icon">🎭</span>
+  <div class="ib-text"><strong>Install Imposter Word</strong><span>Play offline · works like a real app</span></div>
+  <button class="ib-btn" onclick="PWA.install()">Install</button>
+  <button class="ib-close" onclick="PWA.dismiss()">✕</button>
+</div>
+<div id="ios-tip">
+  <div class="tip-title">📲 Add to Home Screen</div>
+  <div class="tip-row"><span class="tip-num">1</span><span>Tap the <strong>Share</strong> button (□↑) at the bottom of Safari</span></div>
+  <div class="tip-row"><span class="tip-num">2</span><span>Tap <strong>"Add to Home Screen"</strong></span></div>
+  <div class="tip-row"><span class="tip-num">3</span><span>Tap <strong>Add</strong> — icon appears on your home screen ✓</span></div>
+  <button class="tip-close" onclick="document.getElementById('ios-tip').classList.remove('show')">Got it ✓</button>
+</div>
+
+<!-- Word library update bar -->
+<div id="upd-bar">
+  <span>📦 New word library available</span>
+  <button onclick="G.updateLib()">Update</button>
+  <button class="ud-close" onclick="document.getElementById('upd-bar').classList.remove('show')">✕</button>
+</div>
+
+<div id="app">
+
+<!-- ══════════════════════════════════ START ══ -->
+<div id="s-start" class="screen active">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+    <div class="logo" style="margin-bottom:44px">
+      <div style="font-size:3.2rem;margin-bottom:6px;text-align:center">🎭</div>
+      <h1>IMPOSTER<br>WORD</h1>
+      <div class="sub">local multiplayer · no internet needed</div>
+    </div>
+    <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:13px">
+      <button class="btn btn-c" onclick="show('s-create')"><span>🏠</span> Create Room</button>
+      <button class="btn btn-p" onclick="show('s-join')"><span>🔗</span> Join Room</button>
+      <button class="btn btn-ghost" id="btn-install" onclick="PWA.prompt()" style="display:none"><span>📲</span> Install as App</button>
+    </div>
+    <p class="tx-m tx-sm" style="margin-top:32px;text-align:center">Connect via <strong style="color:var(--c)">hotspot or same Wi-Fi</strong></p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ CREATE ══ -->
+<div id="s-create" class="screen">
+  <div class="tx-c mb-14"><div class="phase-tag">HOST SETUP</div><h2>Create Room</h2></div>
+  <div class="card">
+    <div class="igroup"><label>Your Name</label><input type="text" id="c-name" placeholder="Enter your name" maxlength="16" autocomplete="off" autocorrect="off"></div>
+  </div>
+  <div class="card">
+    <div class="slabel">Game Settings</div>
+    <div class="igroup">
+      <label>Discussion Time</label>
+      <div class="range-row">
+        <input type="range" id="s-time" min="30" max="300" step="10" value="120" oninput="document.getElementById('s-time-v').textContent=this.value+'s'">
+        <span class="range-val" id="s-time-v">120s</span>
+      </div>
+    </div>
+    <div class="igroup" style="margin-bottom:0">
+      <label>Category</label>
+      <select id="s-cat"><option value="all">All Categories</option></select>
+    </div>
+  </div>
+  <div class="mt-a fcol gap-10">
+    <button class="btn btn-c" onclick="G.createRoom()"><span>🚀</span> Start Lobby</button>
+    <button class="btn btn-ghost" onclick="show('s-start')">← Back</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ JOIN ══ -->
+<div id="s-join" class="screen">
+  <div class="tx-c mb-14"><div class="phase-tag">PLAYER</div><h2>Join Room</h2></div>
+  <div class="card">
+    <div class="igroup"><label>Your Name</label><input type="text" id="j-name" placeholder="Enter your name" maxlength="16" autocomplete="off" autocorrect="off"></div>
+    <div class="igroup" style="margin-bottom:0">
+      <label>Room Code</label>
+      <input type="text" id="j-code" class="big-code" placeholder="0000" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    </div>
+  </div>
+  <button class="btn btn-ghost mb-14" onclick="QRScan.open()"><span>📷</span> Scan QR Code Instead</button>
+  <p class="tx-m tx-sm tx-c mb-12">Same Wi-Fi or hotspot as the host</p>
+  <div class="mt-a fcol gap-10">
+    <button class="btn btn-p" onclick="G.joinRoom()"><span>🔗</span> Join Game</button>
+    <button class="btn btn-ghost" onclick="show('s-start')">← Back</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ LOBBY ══ -->
+<div id="s-lobby" class="screen">
+  <div class="tx-c mb-14"><div class="phase-tag">LOBBY</div><h2>Waiting Room</h2></div>
+  <div class="card">
+    <div class="slabel">Room Code</div>
+    <div style="padding:12px 0 8px">
+      <div class="code-big" id="lobby-code">----</div>
+      <p class="tx-m tx-sm tx-c" style="margin-top:6px">Share code · or scan QR below</p>
+    </div>
+  </div>
+  <div class="card" style="padding:16px">
+    <div class="slabel">QR Code Join</div>
+    <div class="qr-wrap"><canvas id="qr-canvas" width="160" height="160"></canvas></div>
+    <p class="tx-m tx-sm tx-c">Scan with phone camera to join</p>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+      <div class="slabel" style="margin:0">Players</div>
+      <span class="tx-mono tx-sm" style="color:var(--c)" id="lobby-cnt">0 players</span>
+    </div>
+    <div id="lobby-players" class="plist"><div class="tx-m tx-c tx-sm">Waiting for players...</div></div>
+  </div>
+  <div class="mt-a fcol gap-10">
+    <button class="btn btn-g" id="btn-start" onclick="G.startGame()" disabled style="display:none"><span>▶</span> Start Game</button>
+    <button class="btn btn-ghost" onclick="G.leaveRoom()">← Leave Room</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ WORD ══ -->
+<div id="s-word" class="screen">
+  <div class="tx-c mb-12"><div class="phase-tag">WORD REVEAL</div><h2>Your Secret Word</h2></div>
+  <p class="tx-m tx-sm tx-c mb-12"><strong style="color:var(--txt)" id="word-pname"></strong> — show only your own screen!</p>
+  <div class="word-wrap">
+    <div class="tap-hint">Tap the card to reveal</div>
+    <div id="wcard" class="wcard" onclick="G.revealWord()">
+      <div class="wcard-icon">👁</div>
+      <div class="wcard-label">Tap to reveal</div>
+      <div class="wcard-word" style="color:var(--muted);font-size:1.2rem">Hidden</div>
+    </div>
+    <p class="tx-m tx-sm tx-c" style="max-width:260px">Memorize it, then tap ready when done</p>
+  </div>
+  <!-- Ready tracker -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="slabel">Waiting for everyone</div>
+    <div id="ready-list" class="plist"></div>
+  </div>
+  <div class="mt-a fcol gap-10">
+    <button class="btn btn-c" id="btn-ready" onclick="G.playerReady()"><span>✓</span> I'm Ready</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ DISCUSS ══ -->
+<div id="s-discuss" class="screen">
+  <div class="tx-c mb-14"><div class="phase-tag">DISCUSSION</div><h2>Discuss the Word</h2></div>
+  <div style="text-align:center;margin-bottom:14px">
+    <div id="tc-discuss" class="tcircle"><span class="tnum" id="tn-discuss">—</span></div>
+    <div class="tlabel">Time Remaining</div>
+  </div>
+  <!-- First speaker banner -->
+  <div class="speaker-banner">
+    <div class="sp-icon">🎤</div>
+    <div class="sp-label">First Speaker</div>
+    <div class="sp-name" id="first-speaker-name">—</div>
+    <div class="sp-sub">describes their word first!</div>
+  </div>
+  <div class="card">
+    <p style="font-weight:700;margin-bottom:6px">💬 Describe your word without naming it</p>
+    <p class="tx-m tx-sm" id="discuss-hint"></p>
+  </div>
+  <div class="card">
+    <div class="slabel">Remember</div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <p class="tx-sm">🔍 Listen for vague or off-topic clues</p>
+      <p class="tx-sm">🎭 If you're the imposter — blend in!</p>
+      <p class="tx-sm">🗳 Voting starts when timer ends</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ VOTE ══ -->
+<div id="s-vote" class="screen">
+  <div class="tx-c mb-14"><div class="phase-tag">VOTING</div><h2>Who's the Imposter?</h2></div>
+  <div style="text-align:center;margin-bottom:14px">
+    <div id="tc-vote" class="tcircle"><span class="tnum" id="tn-vote">—</span></div>
+    <div class="tlabel">Vote Before Time Runs Out</div>
+  </div>
+  <p class="tx-m tx-sm tx-c mb-12">Tap a player to select, then confirm</p>
+  <div id="vote-list" class="vlist"></div>
+  <div class="mt-a fcol gap-10" style="margin-top:16px">
+    <button class="btn btn-p" id="btn-vote" onclick="G.confirmVote()" disabled>🗳 Confirm Vote</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ RESULT ══ -->
+<div id="s-result" class="screen">
+  <div class="tx-c mb-14"><div class="phase-tag">RESULTS</div></div>
+  <div style="text-align:center;padding:16px 0">
+    <span id="res-icon" class="result-icon">🏆</span>
+    <div id="res-title" class="result-title rtw">Imposter Caught!</div>
+    <p class="tx-m tx-sm" style="margin-top:4px" id="res-sub"></p>
+  </div>
+  <div class="card">
+    <div class="slabel">The Words Were</div>
+    <div class="wpair">
+      <div class="wpbox wpn"><small>Normal Players</small><span id="res-nw">—</span></div>
+      <div style="color:var(--muted);font-size:1.2rem">⚡</div>
+      <div class="wpbox wpi"><small>The Imposter</small><span id="res-iw">—</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="slabel">The Imposter</div>
+    <div id="res-imposters" class="plist"></div>
+  </div>
+  <div class="card">
+    <div class="slabel">Vote Tally</div>
+    <div id="res-votes"></div>
+  </div>
+  <div class="mt-a fcol gap-10" style="margin-top:16px">
+    <button class="btn btn-c" onclick="G.playAgain()">🔄 Play Again</button>
+    <button class="btn btn-ghost" onclick="G.leaveRoom()">🏠 Back to Home</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════
+   WORD LIBRARY
+   ══════════════════════════════════════════════════════ */
+const BUILTIN = {
+  version: 3,
+  categories: ['Food','Animals','Nature','Music','Tech','Places','Sports','Objects','Roles','Fantasy','Drinks','Body'],
+  pairs: [
+    {n:'Apple',i:'Pear',c:'Food'},{n:'Pizza',i:'Flatbread',c:'Food'},{n:'Cake',i:'Muffin',c:'Food'},
+    {n:'Burger',i:'Sandwich',c:'Food'},{n:'Sushi',i:'Sashimi',c:'Food'},{n:'Pancake',i:'Waffle',c:'Food'},
+    {n:'Soup',i:'Stew',c:'Food'},{n:'Butter',i:'Margarine',c:'Food'},
+    {n:'Dog',i:'Wolf',c:'Animals'},{n:'Cat',i:'Tiger',c:'Animals'},{n:'Eagle',i:'Hawk',c:'Animals'},
+    {n:'Bear',i:'Panda',c:'Animals'},{n:'Dolphin',i:'Shark',c:'Animals'},{n:'Rabbit',i:'Hare',c:'Animals'},
+    {n:'Horse',i:'Donkey',c:'Animals'},{n:'Crow',i:'Raven',c:'Animals'},
+    {n:'Ocean',i:'Sea',c:'Nature'},{n:'River',i:'Stream',c:'Nature'},{n:'Volcano',i:'Mountain',c:'Nature'},
+    {n:'Sun',i:'Moon',c:'Nature'},{n:'Storm',i:'Hurricane',c:'Nature'},{n:'Forest',i:'Jungle',c:'Nature'},
+    {n:'Guitar',i:'Ukulele',c:'Music'},{n:'Violin',i:'Cello',c:'Music'},{n:'Drum',i:'Bongo',c:'Music'},
+    {n:'Piano',i:'Organ',c:'Music'},{n:'Trumpet',i:'Trombone',c:'Music'},
+    {n:'Smartphone',i:'Tablet',c:'Tech'},{n:'Laptop',i:'Desktop',c:'Tech'},{n:'Rocket',i:'Missile',c:'Tech'},
+    {n:'Robot',i:'Drone',c:'Tech'},{n:'Keyboard',i:'Controller',c:'Tech'},
+    {n:'Hospital',i:'Clinic',c:'Places'},{n:'Library',i:'Bookstore',c:'Places'},{n:'Castle',i:'Fort',c:'Places'},
+    {n:'Restaurant',i:'Cafe',c:'Places'},{n:'Stadium',i:'Arena',c:'Places'},
+    {n:'Soccer',i:'Rugby',c:'Sports'},{n:'Tennis',i:'Badminton',c:'Sports'},{n:'Basketball',i:'Volleyball',c:'Sports'},
+    {n:'Swimming',i:'Diving',c:'Sports'},{n:'Boxing',i:'Wrestling',c:'Sports'},
+    {n:'Diamond',i:'Crystal',c:'Objects'},{n:'Sword',i:'Dagger',c:'Objects'},{n:'Lantern',i:'Candle',c:'Objects'},
+    {n:'Mirror',i:'Window',c:'Objects'},{n:'Rope',i:'Chain',c:'Objects'},
+    {n:'King',i:'Emperor',c:'Roles'},{n:'Nurse',i:'Doctor',c:'Roles'},{n:'Police',i:'Guard',c:'Roles'},
+    {n:'Chef',i:'Baker',c:'Roles'},{n:'Pilot',i:'Captain',c:'Roles'},
+    {n:'Witch',i:'Wizard',c:'Fantasy'},{n:'Dragon',i:'Dinosaur',c:'Fantasy'},{n:'Vampire',i:'Zombie',c:'Fantasy'},
+    {n:'Elf',i:'Dwarf',c:'Fantasy'},{n:'Ghost',i:'Spirit',c:'Fantasy'},
+    {n:'Coffee',i:'Tea',c:'Drinks'},{n:'Beer',i:'Wine',c:'Drinks'},{n:'Juice',i:'Smoothie',c:'Drinks'},
+    {n:'Milk',i:'Cream',c:'Drinks'},
+    {n:'Eye',i:'Ear',c:'Body'},{n:'Hand',i:'Foot',c:'Body'},{n:'Heart',i:'Lung',c:'Body'},{n:'Brain',i:'Spine',c:'Body'}
+  ]
+};
+
+/* ══════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════ */
+const S = {
+  phase:'start', isHost:false, myId:null, myName:'', code:'',
+  players:[],           // [{id,name}]
+  settings:{time:120, cat:'all'},
+  assignment:null,      // {word, isImp}
+  wordPair:null,        // {n,i,c}
+  imposterIds:[],
+  votes:{},
+  myVote:null,
+  timerSecs:0, timerTotal:0, timerInterval:null,
+  wordRevealed:false,
+  readyIds:new Set(),   // who hit ready on word screen
+  firstSpeaker:'',
+  wordLib:null,
+  peer:null,
+  conns:{}
+};
+
+/* ══════════════════════════════════════════════════════
+   AVATAR GRADIENTS
+   ══════════════════════════════════════════════════════ */
+const GRADS = [
+  'linear-gradient(135deg,#00e5ff,#ff2060)','linear-gradient(135deg,#ffd600,#ff6b00)',
+  'linear-gradient(135deg,#00ff88,#00e5ff)','linear-gradient(135deg,#ff2060,#9b00ff)',
+  'linear-gradient(135deg,#00e5ff,#00ff88)','linear-gradient(135deg,#ff6b00,#ff2060)',
+  'linear-gradient(135deg,#9b00ff,#00e5ff)','linear-gradient(135deg,#00ff88,#ffd600)'
+];
+
+/* ══════════════════════════════════════════════════════
+   WORD LIBRARY FUNCTIONS
+   ══════════════════════════════════════════════════════ */
+function loadLib() {
+  try { S.wordLib = JSON.parse(localStorage.getItem('iw_words')) || BUILTIN; }
+  catch(e) { S.wordLib = BUILTIN; }
+  const sel = document.getElementById('s-cat');
+  sel.innerHTML = '<option value="all">All Categories</option>';
+  (S.wordLib.categories || BUILTIN.categories).forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+}
+
+async function checkLibUpdate() {
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/JUJUx1/Imposter/main/Words.json', {signal:AbortSignal.timeout(4000)});
+    const data = await r.json();
+    if ((data.version||0) > (S.wordLib?.version||0))
+      document.getElementById('upd-bar').classList.add('show');
+  } catch(e) {}
+}
+
+async function doUpdateLib() {
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/JUJUx1/Imposter/main/Words.json');
+    const data = await r.json();
+    S.wordLib = data;
+    localStorage.setItem('iw_words', JSON.stringify(data));
+    document.getElementById('upd-bar').classList.remove('show');
+    toast('Library updated! 🎉','good');
+  } catch(e) { toast('Update failed — check connection','bad'); }
+}
+
+function pickPair() {
+  let pool = S.wordLib?.pairs || BUILTIN.pairs;
+  const cat = S.settings.cat;
+  if (cat && cat !== 'all') { const f = pool.filter(p => p.c === cat); if (f.length) pool = f; }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/* ══════════════════════════════════════════════════════
+   NETWORK — PeerJS WebRTC
+   ══════════════════════════════════════════════════════ */
+const PEER_CFG = {config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]},debug:0};
+
+function hostPid(code){ return `iw-room-${code}`; }
+
+function nSend(pid, msg){ const c = S.conns[pid]; if(c?.open) c.send(msg); }
+
+function nBcast(msg, except){
+  Object.entries(S.conns).forEach(([id,c]) => { if(id!==except && c?.open) c.send(msg); });
+}
+
+function setupConn(conn, incoming) {
+  S.conns[conn.peer] = conn;
+  conn.on('open', () => {
+    if (incoming && S.isHost) {
+      const name = conn.metadata?.name || 'Player';
+      addPlayer(conn.peer, name);
+      toast(`${name} joined!`,'info');
+    }
+  });
+  conn.on('data', d => handleMsg(conn.peer, d));
+  conn.on('close', () => { delete S.conns[conn.peer]; if(S.isHost) removePlayer(conn.peer); else toast('A player disconnected','warn'); });
+  conn.on('error', () => { delete S.conns[conn.peer]; if(S.isHost) removePlayer(conn.peer); });
+}
+
+/* ══════════════════════════════════════════════════════
+   PLAYER MANAGEMENT
+   ══════════════════════════════════════════════════════ */
+function addPlayer(id, name) {
+  if (S.players.find(p => p.id===id)) return;
+  S.players.push({id, name});
+  bcastLobby(); renderLobby();
+}
+function removePlayer(id) {
+  S.players = S.players.filter(p => p.id!==id);
+  bcastLobby(); renderLobby();
+}
+function bcastLobby() {
+  if (!S.isHost) return;
+  nBcast({type:'LOBBY', players:S.players, settings:S.settings});
+}
+
+/* ══════════════════════════════════════════════════════
+   MESSAGE HANDLER
+   ══════════════════════════════════════════════════════ */
+function handleMsg(from, msg) {
+  switch(msg.type) {
+    case 'JOIN_REQ':
+      if (S.isHost) addPlayer(from, msg.name);
+      break;
+    case 'LOBBY':
+      if (!S.isHost) { S.players=msg.players; S.settings=msg.settings; renderLobby(); }
+      break;
+    case 'GAME_START':
+      if (!S.isHost) {
+        S.wordPair=msg.wordPair; S.settings=msg.settings;
+        S.players=msg.players; S.imposterIds=msg.imposterIds;
+        S.assignment=msg.assignments[S.myId]; S.wordRevealed=false;
+        phaseWord();
+      }
+      break;
+    case 'PHASE':
+      if (!S.isHost) {
+        if (msg.p==='word') phaseWord();
+        else if (msg.p==='discuss') phaseDiscuss(msg.tTotal, msg.firstSpeaker);
+        else if (msg.p==='vote') phaseVote(msg.tTotal);
+      }
+      break;
+    case 'TICK':
+      if (!S.isHost) { S.timerSecs=msg.s; S.timerTotal=msg.tot||S.timerTotal; updateTimer(); }
+      break;
+    case 'READY':
+      if (S.isHost) {
+        S.readyIds.add(from);
+        nBcast({type:'READY_UPD', readyIds:[...S.readyIds]});
+        renderReadyList();
+        checkAllReady();
+      }
+      break;
+    case 'READY_UPD':
+      if (!S.isHost) { S.readyIds=new Set(msg.readyIds); renderReadyList(); }
+      break;
+    case 'VOTE_CAST':
+      if (S.isHost) {
+        S.votes[msg.target]=(S.votes[msg.target]||0)+1;
+        nBcast({type:'VOTE_UPD',votes:S.votes});
+        checkAllVoted();
+      }
+      break;
+    case 'VOTE_UPD':
+      if (!S.isHost) { S.votes=msg.votes; renderVotePhase(); }
+      break;
+    case 'RESULT':
+      if (!S.isHost) phaseResult(msg);
+      break;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   READY SYSTEM
+   ══════════════════════════════════════════════════════ */
+function checkAllReady() {
+  if (!S.isHost) return;
+  // All players ready (readyIds has everyone except host who marked themselves)
+  if (S.readyIds.size >= S.players.length) {
+    const speaker = S.players[Math.floor(Math.random() * S.players.length)];
+    S.firstSpeaker = speaker.name;
+    setTimeout(() => phaseDiscuss(null, S.firstSpeaker), 500);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   TIMER
+   ══════════════════════════════════════════════════════ */
+function startTimer(secs, onEnd) {
+  clearInterval(S.timerInterval);
+  S.timerSecs=secs; S.timerTotal=secs;
+  updateTimer();
+  S.timerInterval = setInterval(() => {
+    S.timerSecs--;
+    if (S.isHost) nBcast({type:'TICK',s:S.timerSecs,tot:S.timerTotal});
+    updateTimer();
+    if (S.timerSecs<=0) { clearInterval(S.timerInterval); if(onEnd) onEnd(); }
+  }, 1000);
+}
+
+function updateTimer() {
+  const phase = S.phase==='discuss'?'discuss':'vote';
+  const tc = document.getElementById(`tc-${phase}`);
+  const tn = document.getElementById(`tn-${phase}`);
+  if (!tc||!tn) return;
+  const pct = Math.max(0, S.timerSecs/S.timerTotal*100);
+  tc.style.setProperty('--p1',`${pct}%`);
+  tn.textContent = S.timerSecs;
+  if (S.timerSecs<=10) tc.classList.add('urgent'); else tc.classList.remove('urgent');
+}
+
+/* ══════════════════════════════════════════════════════
+   GAME PHASES
+   ══════════════════════════════════════════════════════ */
+function phaseWord() {
+  S.phase='word'; S.wordRevealed=false; S.readyIds=new Set();
+  show('s-word');
+  document.getElementById('word-pname').textContent = S.myName;
+  const wc = document.getElementById('wcard');
+  wc.className='wcard';
+  wc.innerHTML=`<div class="wcard-icon">👁</div><div class="wcard-label">Tap to reveal</div><div class="wcard-word" style="color:var(--muted);font-size:1.2rem">Hidden</div>`;
+  const rb = document.getElementById('btn-ready');
+  rb.disabled=false; rb.innerHTML='<span>✓</span> I\'m Ready';
+  renderReadyList();
+}
+
+function phaseDiscuss(tTotal, firstSpeaker) {
+  S.phase='discuss'; S.votes={}; S.myVote=null;
+  if (firstSpeaker) S.firstSpeaker=firstSpeaker;
+  show('s-discuss');
+  document.getElementById('first-speaker-name').textContent = S.firstSpeaker||'—';
+  document.getElementById('discuss-hint').textContent = S.assignment?.isImp
+    ? 'You are the imposter 🎭 — blend in!'
+    : `Your word: ${S.assignment?.word||''}`;
+  if (S.isHost) {
+    const t = tTotal||S.settings.time;
+    nBcast({type:'PHASE',p:'discuss',tTotal:t,firstSpeaker:S.firstSpeaker});
+    startTimer(t, () => { if(S.isHost) phaseVote(); });
+  } else {
+    S.timerTotal=tTotal||S.settings.time; S.timerSecs=S.timerTotal; updateTimer();
+  }
+}
+
+function phaseVote(tTotal) {
+  S.phase='vote'; S.votes={}; S.myVote=null;
+  show('s-vote'); renderVotePhase();
+  if (S.isHost) {
+    const t=tTotal||60;
+    nBcast({type:'PHASE',p:'vote',tTotal:t});
+    startTimer(t, () => { if(S.isHost) resolveVotes(); });
+  } else {
+    S.timerTotal=tTotal||60; S.timerSecs=S.timerTotal; updateTimer();
+  }
+}
+
+function phaseResult(data) {
+  S.phase='result'; clearInterval(S.timerInterval);
+  if (data) { S.votes=data.votes||{}; S.imposterIds=data.imposterIds||[]; }
+  show('s-result');
+  const win = data?.winner==='players';
+  const isImp = S.imposterIds.includes(S.myId);
+  const iWon = (win&&!isImp)||(!win&&isImp);
+  document.getElementById('res-icon').textContent = iWon?'🏆':'💀';
+  const rt = document.getElementById('res-title');
+  rt.textContent = win?'Imposter Caught!':'Imposters Win!';
+  rt.className=`result-title ${win?'rtw':'rtl'}`;
+  document.getElementById('res-sub').textContent = iWon?'Well played! 🎉':'Better luck next time...';
+  document.getElementById('res-nw').textContent = data?.nw||S.wordPair?.n||'?';
+  document.getElementById('res-iw').textContent = data?.iw||S.wordPair?.i||'?';
+  document.getElementById('res-imposters').innerHTML = S.players
+    .filter(p=>S.imposterIds.includes(p.id))
+    .map((p,i)=>pItem(p,i,false,true)).join('')||'<div class="tx-m tx-c tx-sm">—</div>';
+  document.getElementById('res-votes').innerHTML = S.players.map(p=>{
+    const v=S.votes[p.id]||0, isImpP=S.imposterIds.includes(p.id);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)">
+      <span style="flex:1;font-weight:600">${esc(p.name)}</span>
+      <span class="tx-mono tx-sm" style="color:var(--c)">${v} vote${v!==1?'s':''}</span>
+      ${isImpP?'<span class="pbadge" style="background:rgba(255,32,96,.12);color:var(--p)">IMP</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function resolveVotes() {
+  if (!S.isHost) return;
+  let max=0, mostVoted=null;
+  Object.entries(S.votes).forEach(([id,cnt])=>{if(cnt>max){max=cnt;mostVoted=id;}});
+  const caught=S.imposterIds.includes(mostVoted);
+  const data={type:'RESULT',imposterIds:S.imposterIds,nw:S.wordPair.n,iw:S.wordPair.i,votes:S.votes,winner:caught?'players':'imposters'};
+  nBcast(data); phaseResult(data);
+}
+
+function checkAllVoted() {
+  const total=Object.values(S.votes).reduce((a,b)=>a+b,0);
+  if (total>=S.players.length) { clearInterval(S.timerInterval); resolveVotes(); }
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER HELPERS
+   ══════════════════════════════════════════════════════ */
+function pItem(p, idx, isHostP, isImp) {
+  const init=(p.name||'?')[0].toUpperCase();
+  const badge = isImp
+    ? `<span class="pbadge" style="background:rgba(255,32,96,.12);color:var(--p)">IMPOSTER</span>`
+    : isHostP ? `<span class="pbadge b-host">HOST</span>` : `<span class="pbadge b-ready">READY</span>`;
+  return `<div class="pitem${isHostP?' host-item':''}">
+    <div class="pavatar" style="background:${GRADS[idx%GRADS.length]}">${init}</div>
+    <span class="pname">${esc(p.name)}</span>${badge}
+  </div>`;
+}
+
+function renderLobby() {
+  const hostId = S.isHost ? S.myId : S.players[0]?.id;
+  const el = document.getElementById('lobby-players');
+  el.innerHTML = S.players.length
+    ? S.players.map((p,i)=>pItem(p,i,p.id===hostId,false)).join('')
+    : '<div class="tx-m tx-c tx-sm">Waiting for players...</div>';
+  document.getElementById('lobby-cnt').textContent=`${S.players.length} player${S.players.length!==1?'s':''}`;
+  const sb=document.getElementById('btn-start');
+  sb.style.display=S.isHost?'':'none';
+  sb.disabled=S.players.length<2;
+}
+
+function renderReadyList() {
+  const el=document.getElementById('ready-list');
+  if (!el) return;
+  el.innerHTML=S.players.map((p,i)=>{
+    const isMe = p.id===S.myId;
+    const ready = isMe ? document.getElementById('btn-ready')?.disabled : S.readyIds.has(p.id);
+    const init=(p.name||'?')[0].toUpperCase();
+    return `<div class="pitem">
+      <div class="pavatar" style="background:${GRADS[i%GRADS.length]};width:28px;height:28px;font-size:.8rem">${init}</div>
+      <span class="pname" style="font-size:.88rem">${esc(p.name)}</span>
+      <span class="pbadge ${ready?'b-ready':'b-wait'}">${ready?'✓ READY':'WAITING'}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderVotePhase() {
+  const el=document.getElementById('vote-list');
+  el.innerHTML=S.players.filter(p=>p.id!==S.myId).map((p,i)=>{
+    const sel=p.id===S.myVote;
+    return `<button class="vbtn${sel?' sel':''}" onclick="G.selectVote('${p.id}')">
+      <div class="vavatar" style="background:${GRADS[i%GRADS.length]}">${(p.name||'?')[0].toUpperCase()}</div>
+      <span>${esc(p.name)}</span>
+      <span class="vcnt">${S.votes[p.id]?'🗳 '+S.votes[p.id]:''}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('btn-vote').disabled=!S.myVote;
+}
+
+/* ══════════════════════════════════════════════════════
+   MAIN CONTROLLER (G)
+   ══════════════════════════════════════════════════════ */
+const G = {
+
+  createRoom() {
+    const name = val('c-name');
+    if (!name) { toast('Enter your name!','warn'); return; }
+    S.myName=name; S.isHost=true;
+    S.settings.time=parseInt(document.getElementById('s-time').value)||120;
+    S.settings.cat=document.getElementById('s-cat').value||'all';
+    const code=String(Math.floor(1000+Math.random()*9000));
+    S.code=code; show('s-lobby');
+    document.getElementById('lobby-code').textContent=code;
+    if (typeof Peer==='undefined') { toast('PeerJS not loaded','bad'); return; }
+    S.peer=new Peer(hostPid(code), PEER_CFG);
+    S.peer.on('open', id=>{
+      S.myId=id; S.players=[{id,name}]; renderLobby();
+      const joinUrl=`${location.origin}${location.pathname}?join=${code}`;
+      if (typeof QRious!=='undefined')
+        new QRious({element:document.getElementById('qr-canvas'),value:joinUrl,size:160,foreground:'#00e5ff',background:'#0f0f1a',level:'M'});
+      document.getElementById('conn-badge').classList.add('show');
+      toast('Room created! Share the code 🎉','good');
+    });
+    S.peer.on('connection', conn=>setupConn(conn,true));
+    S.peer.on('error', err=>{ toast('Connection error — check network','bad'); console.error(err); });
+    S.peer.on('disconnected', ()=>S.peer?.reconnect());
+  },
+
+  joinRoom() {
+    const name=val('j-name'), code=val('j-code');
+    if (!name) { toast('Enter your name!','warn'); return; }
+    if (code.length!==4) { toast('Enter 4-digit room code','warn'); return; }
+    S.myName=name; S.code=code; S.isHost=false;
+    show('s-lobby');
+    document.getElementById('lobby-code').textContent=code;
+    document.getElementById('btn-start').style.display='none';
+    if (typeof Peer==='undefined') { toast('PeerJS not loaded','bad'); return; }
+    S.peer=new Peer(PEER_CFG);
+    S.peer.on('open', id=>{
+      S.myId=id;
+      const conn=S.peer.connect(hostPid(code),{reliable:true,metadata:{name}});
+      setupConn(conn,false);
+      conn.on('open',()=>{
+        conn.send({type:'JOIN_REQ',name});
+        document.getElementById('conn-badge').classList.add('show');
+        toast('Joined! Waiting for host...','good');
+      });
+      conn.on('error',err=>{ toast('Could not connect — check code & network','bad'); show('s-join'); console.error(err); });
+    });
+    S.peer.on('error', err=>{ toast('Connection error','bad'); show('s-join'); console.error(err); });
+  },
+
+  startGame() {
+    if (!S.isHost) return;
+    if (S.players.length<2) { toast('Need at least 2 players!','warn'); return; }
+    const pair=pickPair();
+    if (!pair) { toast('No word pairs available!','bad'); return; }
+    S.wordPair=pair; S.readyIds=new Set();
+    // Always exactly 1 imposter
+    const shuffled=[...S.players].sort(()=>Math.random()-.5);
+    S.imposterIds=[shuffled[0].id];
+    const assignments={};
+    S.players.forEach(p=>{
+      const isImp=S.imposterIds.includes(p.id);
+      assignments[p.id]={word:isImp?pair.i:pair.n,isImp};
+    });
+    S.assignment=assignments[S.myId];
+    S.wordRevealed=false;
+    nBcast({type:'GAME_START',assignments,wordPair:pair,settings:S.settings,players:S.players,imposterIds:S.imposterIds});
+    phaseWord();
+  },
+
+  revealWord() {
+    if (S.wordRevealed||!S.assignment) return;
+    S.wordRevealed=true;
+    const a=S.assignment;
+    const wc=document.getElementById('wcard');
+    wc.className=`wcard revealed${a.isImp?' imp':''}`;
+    wc.innerHTML=`
+      <div class="wcard-label">${a.isImp?'🎭 YOU ARE THE IMPOSTER':'🔑 YOUR WORD'}</div>
+      <div class="wcard-word">${esc(a.word)}</div>
+      <div class="wcard-sub">${a.isImp?'Others have a different word.<br>Blend in without being caught!':'Describe without naming it.<br>Find the imposter!'}</div>`;
+  },
+
+  playerReady() {
+    if (!S.wordRevealed) { toast('Reveal your word first!','warn'); return; }
+    const rb=document.getElementById('btn-ready');
+    rb.disabled=true; rb.textContent='Waiting for others...';
+    // Mark self ready
+    S.readyIds.add(S.myId);
+    renderReadyList();
+    if (S.isHost) {
+      nBcast({type:'READY_UPD',readyIds:[...S.readyIds]});
+      checkAllReady();
+    } else {
+      const hConn=Object.values(S.conns)[0];
+      if (hConn?.open) hConn.send({type:'READY'});
+    }
+  },
+
+  selectVote(targetId) {
+    if (S.myVote) return;
+    S.myVote=targetId; renderVotePhase();
+  },
+
+  confirmVote() {
+    if (!S.myVote) return;
+    const btn=document.getElementById('btn-vote');
+    btn.disabled=true; btn.textContent='✓ Vote Locked In';
+    if (S.isHost) {
+      S.votes[S.myVote]=(S.votes[S.myVote]||0)+1;
+      nBcast({type:'VOTE_UPD',votes:S.votes});
+      checkAllVoted();
+    } else {
+      const hConn=Object.values(S.conns)[0];
+      if (hConn?.open) hConn.send({type:'VOTE_CAST',target:S.myVote});
+    }
+  },
+
+  playAgain() {
+    if (S.isHost) {
+      S.votes={}; S.myVote=null; S.imposterIds=[];
+      nBcast({type:'LOBBY',players:S.players,settings:S.settings});
+      show('s-lobby'); renderLobby();
+    } else {
+      toast('Waiting for host to restart...','info');
+      show('s-lobby');
+    }
+  },
+
+  leaveRoom() {
+    clearInterval(S.timerInterval);
+    Object.values(S.conns).forEach(c=>c.close()); S.conns={};
+    if (S.peer) { S.peer.destroy(); S.peer=null; }
+    S.players=[]; S.assignment=null; S.phase='start'; S.myId=null; S.isHost=false;
+    document.getElementById('conn-badge').classList.remove('show');
+    show('s-start');
+  },
+
+  updateLib: doUpdateLib
+};
+
+/* ══════════════════════════════════════════════════════
+   QR SCANNER
+   ══════════════════════════════════════════════════════ */
+const QRScan = (() => {
+  let stream=null, scanInterval=null, canvas=null, ctx=null;
+
+  function open() {
+    const nameEl = document.getElementById('j-name');
+    if (!nameEl.value.trim()) { toast('Enter your name first!','warn'); return; }
+    if (!navigator.mediaDevices?.getUserMedia) { toast('Camera not supported on this browser','bad'); return; }
+    document.getElementById('qr-modal').classList.add('show');
+    document.getElementById('scan-status').textContent='Point camera at host\'s QR code';
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:640},height:{ideal:640}}})
+      .then(s=>{
+        stream=s;
+        const v=document.getElementById('qr-video');
+        v.srcObject=s; v.play();
+        canvas=document.createElement('canvas');
+        ctx=canvas.getContext('2d',{willReadFrequently:true});
+        v.addEventListener('loadedmetadata',()=>{ canvas.width=v.videoWidth; canvas.height=v.videoHeight; });
+        startScan(v);
+      })
+      .catch(()=>{ toast('Camera permission denied','bad'); close(); });
+  }
+
+  function startScan(v) {
+    // Try BarcodeDetector (Chrome Android)
+    if ('BarcodeDetector' in window) {
+      const bd=new BarcodeDetector({formats:['qr_code']});
+      scanInterval=setInterval(async ()=>{
+        if (!v.videoWidth) return;
+        try {
+          const codes=await bd.detect(v);
+          if (codes.length) { handleResult(codes[0].rawValue); }
+        } catch(e){}
+      }, 350);
+    } else {
+      // Fallback: use jsQR if available
+      scanInterval=setInterval(()=>{
+        if (!v.videoWidth||!canvas) return;
+        canvas.width=v.videoWidth; canvas.height=v.videoHeight;
+        ctx.drawImage(v,0,0);
+        if (typeof jsQR==='undefined') {
+          document.getElementById('scan-status').textContent='QR scanning not supported — enter code manually';
+          clearInterval(scanInterval);
+          return;
+        }
+        const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const result=jsQR(img.data,img.width,img.height);
+        if (result) handleResult(result.data);
+      }, 350);
+    }
+  }
+
+  function handleResult(raw) {
+    let code=null;
+    try { code=new URL(raw).searchParams.get('join'); } catch(e){}
+    if (!code && /^\d{4}$/.test(raw.trim())) code=raw.trim();
+    if (code) {
+      document.getElementById('j-code').value=code;
+      toast(`Room code ${code} scanned ✓`,'good');
+      close();
+    }
+  }
+
+  function close() {
+    clearInterval(scanInterval); scanInterval=null;
+    if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    document.getElementById('qr-modal').classList.remove('show');
+  }
+
+  return {open, close};
+})();
+
+/* ══════════════════════════════════════════════════════
+   UTILITIES
+   ══════════════════════════════════════════════════════ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id);
+  if (el) { el.classList.add('active'); el.scrollTop=0; }
+}
+function val(id){ return (document.getElementById(id)?.value||'').trim(); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg,type='info',ms=3200) {
+  const icons={info:'ℹ️',warn:'⚠️',good:'✅',bad:'❌'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),280); }, ms);
+}
+
+/* ══════════════════════════════════════════════════════
+   PWA — Manifest + Service Worker (all inline, no extra files)
+   ══════════════════════════════════════════════════════ */
+const PWA = (() => {
+  let deferred=null;
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+  const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+
+  function init() {
+    _injectManifest();
+    _registerSW();
+    window.addEventListener('beforeinstallprompt', e=>{
+      e.preventDefault(); deferred=e;
+      if (!isStandalone) {
+        document.getElementById('install-bar').classList.add('show');
+        document.getElementById('btn-install').style.display='';
+      }
+    });
+    window.addEventListener('appinstalled', ()=>{
+      document.getElementById('install-bar').classList.remove('show');
+      document.getElementById('btn-install').style.display='none';
+      deferred=null; toast('App installed! Open from home screen 🎉','good',5000);
+    });
+    if (isIOS&&!isStandalone) {
+      setTimeout(()=>{
+        document.getElementById('ios-tip').classList.add('show');
+        document.getElementById('btn-install').style.display='';
+        document.getElementById('btn-install').onclick=()=>document.getElementById('ios-tip').classList.add('show');
+      }, 3000);
+    }
+  }
+
+  function _makeIcon(size) {
+    const c=document.createElement('canvas'); c.width=c.height=size;
+    const x=c.getContext('2d');
+    const bg=x.createLinearGradient(0,0,size,size);
+    bg.addColorStop(0,'#0f0f1a'); bg.addColorStop(1,'#180a20');
+    x.fillStyle=bg; x.fillRect(0,0,size,size);
+    const glow=x.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+    glow.addColorStop(0,'rgba(0,229,255,.12)'); glow.addColorStop(1,'transparent');
+    x.fillStyle=glow; x.fillRect(0,0,size,size);
+    x.strokeStyle='rgba(0,229,255,.35)'; x.lineWidth=size*.022;
+    x.beginPath(); x.roundRect(size*.04,size*.04,size*.92,size*.92,size*.12); x.stroke();
+    x.font=`${size*.52}px serif`; x.textAlign='center'; x.textBaseline='middle';
+    x.fillText('🎭',size/2,size/2+size*.03);
+    return c.toDataURL('image/png');
+  }
+
+  function _injectManifest() {
+    const m={name:'Imposter Word',short_name:'Imposter',description:'Local multiplayer word party game',
+      start_url:'./',display:'standalone',orientation:'portrait',
+      background_color:'#080810',theme_color:'#080810',
+      icons:[{src:_makeIcon(192),sizes:'192x192',type:'image/png',purpose:'any maskable'},
+             {src:_makeIcon(512),sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+    const blob=new Blob([JSON.stringify(m)],{type:'application/json'});
+    document.getElementById('pwa-manifest').href=URL.createObjectURL(blob);
+  }
+
+  function _registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    const selfUrl = location.href.split('?')[0];
+
+    // All external assets to pre-cache on first visit
+    const CDN_ASSETS = [
+      'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js',
+      'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap'
+    ];
+
+    const sw = `
+const CACHE = 'iw-v4';
+const SELF  = '${selfUrl}';
+const CDN   = ${JSON.stringify(CDN_ASSETS)};
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(async c => {
+      // Cache the game page itself
+      await c.add(SELF).catch(()=>{});
+      // Cache all CDN assets
+      await Promise.all(CDN.map(url =>
+        fetch(url).then(r => r.ok ? c.put(url, r) : null).catch(()=>{})
+      ));
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(ks =>
+      Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', e => {
+  const u = e.request.url;
+  // GitHub words.json — network first, silent fail
+  if (u.includes('raw.githubusercontent.com')) {
+    e.respondWith(fetch(e.request).catch(() => new Response('{}', {headers:{'Content-Type':'application/json'}})));
+    return;
+  }
+  // Everything else — cache first, network fallback
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(r => {
+        if (r.ok) {
+          const clone = r.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return r;
+      });
+    })
+  );
+});
+
+// Tell the page when caching is done
+self.addEventListener('message', e => {
+  if (e.data === 'CHECK_CACHED') {
+    caches.open(CACHE).then(c => c.match(SELF)).then(hit => {
+      e.source.postMessage(hit ? 'CACHED' : 'NOT_CACHED');
+    });
+  }
+});`;
+
+    const blob = new Blob([sw], {type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob), {scope: './'})
+      .then(reg => {
+        reg.update();
+        // Listen for the SW to finish installing & caching
+        const listenForReady = (sw) => {
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'activated') {
+              // Small delay to let cache writes finish
+              setTimeout(() => {
+                showOfflineReady();
+              }, 800);
+            }
+          });
+        };
+        if (reg.installing) listenForReady(reg.installing);
+        else if (reg.waiting) listenForReady(reg.waiting);
+        else if (reg.active) {
+          // Already installed from a previous visit — check silently
+          navigator.serviceWorker.controller?.postMessage('CHECK_CACHED');
+        }
+      })
+      .catch(e => console.warn('[PWA] SW fail:', e));
+
+    // Listen for messages from SW
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data === 'CACHED') {
+        // Already cached from before — show nothing, it just works
+      }
+    });
+  }
+
+  function showOfflineReady() {
+    // Only show once per install
+    if (localStorage.getItem('iw_offline_ready')) return;
+    localStorage.setItem('iw_offline_ready', '1');
+    // Show a persistent banner
+    const bar = document.getElementById('offline-ready-bar');
+    if (bar) {
+      bar.classList.add('show');
+      setTimeout(() => bar.classList.remove('show'), 6000);
+    }
+    toast('✅ Game saved! Works offline now', 'good', 5000);
+  }
+
+  function install() {
+    if (deferred) {
+      deferred.prompt();
+      deferred.userChoice.then(()=>{ deferred=null; document.getElementById('install-bar').classList.remove('show'); });
+    }
+  }
+  function dismiss() {
+    document.getElementById('install-bar').classList.remove('show');
+  }
+  function prompt() {
+    if (deferred) { install(); return; }
+    if (isIOS) { document.getElementById('ios-tip').classList.add('show'); return; }
+    toast('Open in Chrome or Safari to install','info',4000);
+  }
+  return {init, install, dismiss, prompt};
+})();
+
+/* ══════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadLib();
+  checkLibUpdate();
+  PWA.init();
+  // Auto-fill code from QR scan URL
+  const code=new URLSearchParams(location.search).get('join');
+  if (code) { document.getElementById('j-code').value=code; show('s-join'); }
+});
+</script>
+</body>
+</html>
