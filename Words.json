@@ -48,6 +48,8 @@
     {"n":"Sword","i":"Dagger","c":"Objects"},
     {"n":"Lantern","i":"Candle","c":"Objects"},
     {"n":"Mirror","i":"Window","c":"Objects"},
+
+{"n":"Camera","i":"image","c":"Objects"},
     {"n":"Rope","i":"Chain","c":"Objects"},
     {"n":"King","i":"Emperor","c":"Roles"},
     {"n":"Nurse","i":"Doctor","c":"Roles"},
